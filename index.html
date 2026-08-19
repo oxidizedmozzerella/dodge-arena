@@ -199,8 +199,8 @@
   .achv-desc { font-size: 11.5px; color: var(--text-dim); font-weight: 500; }
 
   .achv-toast {
-    position: fixed;
-    top: max(58px, calc(14px + env(safe-area-inset-top)));
+    position: absolute;
+    top: 14px;
     left: 50%;
     transform: translate(-50%, -300px);
     z-index: 1200;
@@ -668,15 +668,15 @@
 
 <div class="landscape-warn">Rotate your phone back to portrait to play.</div>
 
-<div class="achv-toast" id="achv-toast">
-  <div class="achv-toast-icon" id="achv-toast-icon">🏆</div>
-  <div class="achv-toast-text">
-    <div class="achv-toast-label" id="achv-toast-label">Achievement Unlocked</div>
-    <div class="achv-toast-title" id="achv-toast-title">—</div>
-  </div>
-</div>
-
 <div id="app">
+  <div class="achv-toast" id="achv-toast">
+    <div class="achv-toast-icon" id="achv-toast-icon">🏆</div>
+    <div class="achv-toast-text">
+      <div class="achv-toast-label" id="achv-toast-label">Achievement Unlocked</div>
+      <div class="achv-toast-title" id="achv-toast-title">—</div>
+    </div>
+  </div>
+
   <div class="hud" id="hud">
     <div class="pill" id="timer-stat">0.0s</div>
     <div class="hud-right">
