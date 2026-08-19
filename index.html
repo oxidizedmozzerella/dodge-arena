@@ -30,6 +30,7 @@
     position: fixed;
     margin: 0; padding: 0; width: 100%; height: 100%;
     height: 100dvh;
+    min-height: -webkit-fill-available;
     background: var(--bg-bottom);
     overflow: hidden;
     overscroll-behavior: none;
@@ -38,8 +39,8 @@
   #app {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: max(env(safe-area-inset-top), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
   #canvas-wrap {
     position: relative;
@@ -199,7 +200,7 @@
 
   .achv-toast {
     position: fixed;
-    top: calc(14px + env(safe-area-inset-top));
+    top: max(58px, calc(14px + env(safe-area-inset-top)));
     left: 50%;
     transform: translate(-50%, -140%);
     z-index: 1200;
