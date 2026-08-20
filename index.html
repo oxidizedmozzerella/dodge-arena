@@ -551,6 +551,77 @@
     pointer-events: none;
   }
 
+  #dash-btn {
+    position: absolute;
+    z-index: 6;
+    display: none;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    box-shadow: 0 0 0 rgba(255,224,102,0);
+    transition: box-shadow 0.15s ease;
+  }
+  #app.playing.dash-owned #dash-btn { display: flex; }
+  #dash-btn.ready { box-shadow: 0 0 22px rgba(255,224,102,0.6); }
+  #dash-btn .bolt { pointer-events: none; }
+  #dash-btn .cd-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(rgba(0,0,0,0.65) calc(var(--cd, 0) * 360deg), transparent 0deg);
+    pointer-events: none;
+  }
+
+  .ability-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .ability-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(255,224,102,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .ability-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ability-name { font-weight: 800; font-size: 14px; color: var(--text-bright); }
+  .ability-desc { font-size: 11px; color: var(--text-dim); font-weight: 500; line-height: 1.3; }
+  .ability-buy-btn {
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #ffe066, #e0b020);
+    color: #1a1200;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-width: 64px;
+  }
+  .ability-buy-btn.owned {
+    background: rgba(91,141,255,0.15);
+    color: var(--player);
+    border: 1px solid rgba(91,141,255,0.4);
+  }
+  .ability-buy-btn:disabled { cursor: default; }
+
+  .changelog-entry { text-align: left; }
+  .changelog-item {
+    font-size: 12.5px;
+    color: var(--text-bright);
+    line-height: 1.55;
+  }
+
   /* Customize controls mode */
   .customize-bar {
     position: absolute;
@@ -713,12 +784,21 @@
       <span class="fist">👊</span>
     </div>
 
+    <div id="dash-btn">
+      <div class="cd-ring" id="dash-cd-ring"></div>
+      <span class="bolt">⚡</span>
+    </div>
+
     <div class="edit-control" id="edit-joystick">
       <span class="lbl">Joystick</span>
       <div class="edit-handle">⤡</div>
     </div>
     <div class="edit-control" id="edit-punch">
       <span class="lbl">Punch</span>
+      <div class="edit-handle">⤡</div>
+    </div>
+    <div class="edit-control" id="edit-dash">
+      <span class="lbl">Dash</span>
       <div class="edit-handle">⤡</div>
     </div>
   </div>
@@ -744,7 +824,7 @@
       <button class="btn" id="achievements-btn">Achievements</button>
       <button class="btn" id="settings-btn">Settings</button>
     </div>
-    <div class="version-tag">Version 1.0</div>
+    <div class="version-tag" id="version-tag">Version 1.0.1</div>
   </div>
 
   <!-- ADMIN PANEL -->
@@ -784,6 +864,17 @@
       <div class="settings-row">
         <div class="row-label">Player Skins</div>
         <div class="skins-row" id="player-skins-row"></div>
+      </div>
+      <div class="settings-row">
+        <div class="row-label">Abilities</div>
+        <div class="ability-card" id="dash-ability-card">
+          <div class="ability-icon">⚡</div>
+          <div class="ability-text">
+            <div class="ability-name">Dash</div>
+            <div class="ability-desc">Dash in the direction you're facing. 3s cooldown.</div>
+          </div>
+          <button class="ability-buy-btn" id="dash-buy-btn">50 🪙</button>
+        </div>
       </div>
     </div>
     <div class="menu-buttons">
@@ -879,9 +970,22 @@
         <span>How To Play</span>
         <span class="arrow">›</span>
       </button>
+      <button class="ghost-btn" id="changelog-btn">
+        <span>Changelog</span>
+        <span class="arrow">›</span>
+      </button>
     </div>
     <div class="menu-buttons">
       <button class="btn" id="settings-back-btn">Back</button>
+    </div>
+  </div>
+
+  <!-- CHANGELOG -->
+  <div class="screen hidden" id="changelog-screen">
+    <div class="title" style="font-size:26px;">Changelog</div>
+    <div class="settings-box" id="changelog-list"></div>
+    <div class="menu-buttons">
+      <button class="btn" id="changelog-back-btn">Back</button>
     </div>
   </div>
 
@@ -905,12 +1009,13 @@
   function defaultControls() {
     return {
       joystick: { xFrac: 0.20, yFrac: 0.86, size: 130 },
-      punch:    { xFrac: 0.82, yFrac: 0.86, size: 78 }
+      punch:    { xFrac: 0.82, yFrac: 0.86, size: 78 },
+      dash:     { xFrac: 0.82, yFrac: 0.64, size: 64 }
     };
   }
 
   // ---------- Persisted settings ----------
-  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0 };
+  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0, ownedAbilities: [] };
   try {
     const saved = JSON.parse(localStorage.getItem('dodgeArenaSettings') || 'null');
     if (saved) {
@@ -969,7 +1074,8 @@
       win() { tone(523, 0.11, 'sine', 0.18, 0); tone(659, 0.11, 'sine', 0.18, 0.11); tone(784, 0.22, 'sine', 0.2, 0.22); },
       lose() { tone(300, 0.16, 'sine', 0.18, 0, 150); tone(220, 0.24, 'sine', 0.16, 0.14, 110); },
       buy() { tone(660, 0.08, 'sine', 0.16, 0); tone(880, 0.12, 'sine', 0.18, 0.08); },
-      denied() { tone(180, 0.12, 'square', 0.14, 0, 90); }
+      denied() { tone(180, 0.12, 'square', 0.14, 0, 90); },
+      dash() { tone(500, 0.09, 'sine', 0.15, 0, 900); }
     };
   })();
   window.addEventListener('pointerdown', function unlock() { Sound.unlock(); window.removeEventListener('pointerdown', unlock); }, { once: true });
@@ -1052,8 +1158,18 @@
   const joystickKnob = document.getElementById('joystick-knob');
   const punchBtn = document.getElementById('punch-btn');
   const punchCdRing = document.getElementById('punch-cd-ring');
+  const dashBtn = document.getElementById('dash-btn');
+  const dashCdRing = document.getElementById('dash-cd-ring');
   const editJoystick = document.getElementById('edit-joystick');
   const editPunch = document.getElementById('edit-punch');
+  const editDash = document.getElementById('edit-dash');
+  const dashAbilityCard = document.getElementById('dash-ability-card');
+  const dashBuyBtn = document.getElementById('dash-buy-btn');
+  const changelogBtn = document.getElementById('changelog-btn');
+  const changelogScreen = document.getElementById('changelog-screen');
+  const changelogBackBtn = document.getElementById('changelog-back-btn');
+  const changelogList = document.getElementById('changelog-list');
+  const versionTag = document.getElementById('version-tag');
   const trainingBar = document.getElementById('training-bar');
   const deathsStat = document.getElementById('deaths-stat');
   const leaveTrainingBtn = document.getElementById('leave-training-btn');
@@ -1127,6 +1243,18 @@
           '<div class="achv-desc">' + a.desc + '</div>' +
         '</div>';
       achievementsList.appendChild(card);
+    }
+  }
+
+  function renderChangelog() {
+    changelogList.innerHTML = '';
+    for (const entry of CHANGELOG) {
+      const card = document.createElement('div');
+      card.className = 'settings-row changelog-entry';
+      let html = '<div class="row-label">v' + entry.version + ' — ' + entry.date + '</div>';
+      for (const c of entry.changes) html += '<div class="changelog-item">• ' + c + '</div>';
+      card.innerHTML = html;
+      changelogList.appendChild(card);
     }
   }
 
@@ -1303,7 +1431,36 @@
       icon.addEventListener('click', () => { Sound.click(); openSkinModal(skin); });
       playerSkinsRow.appendChild(icon);
     }
+    renderAbilities();
   }
+
+  function ownsAbility(id) { return settings.ownedAbilities.includes(id); }
+
+  function updateDashOwnedClass() {
+    appEl.classList.toggle('dash-owned', ownsAbility('dash'));
+  }
+
+  function renderAbilities() {
+    const owned = ownsAbility('dash');
+    dashBuyBtn.textContent = owned ? 'Owned' : '50 🪙';
+    dashBuyBtn.classList.toggle('owned', owned);
+    dashBuyBtn.disabled = owned;
+  }
+
+  dashBuyBtn.addEventListener('click', () => {
+    if (ownsAbility('dash')) return;
+    if (settings.coins >= 50) {
+      settings.coins -= 50;
+      settings.ownedAbilities.push('dash');
+      saveSettings();
+      updateCoinDisplays();
+      renderAbilities();
+      updateDashOwnedClass();
+      Sound.buy();
+    } else {
+      Sound.denied();
+    }
+  });
 
   let activeModalSkin = null;
   function openSkinModal(skin) {
@@ -1384,8 +1541,10 @@
     if (W === 0 || H === 0) return;
     positionControl(joystickZone, settings.controls.joystick);
     positionControl(punchBtn, settings.controls.punch);
+    positionControl(dashBtn, settings.controls.dash);
     positionControl(editJoystick, settings.controls.joystick);
     positionControl(editPunch, settings.controls.punch);
+    positionControl(editDash, settings.controls.dash);
   }
 
   function resize() {
@@ -1406,7 +1565,7 @@
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
   // ---------- State machine ----------
-  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin' };
+  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog' };
   let state = STATE.MENU;
   let tutorialReturnTo = STATE.MENU;
 
@@ -1421,6 +1580,7 @@
     achievementsScreen.classList.toggle('hidden', s !== STATE.ACHIEVEMENTS);
     shopScreen.classList.toggle('hidden', s !== STATE.SHOP);
     adminScreen.classList.toggle('hidden', s !== STATE.ADMIN);
+    changelogScreen.classList.toggle('hidden', s !== STATE.CHANGELOG);
     customizeBar.classList.toggle('hidden', s !== STATE.CUSTOMIZE);
     trainingBar.classList.toggle('hidden', !isTrainingPlay);
     hud.style.visibility = (s === STATE.PLAYING && !trainingMode) ? 'visible' : 'hidden';
@@ -1429,15 +1589,28 @@
     appEl.classList.toggle('customizing', s === STATE.CUSTOMIZE);
     if (s === STATE.ACHIEVEMENTS) renderAchievements();
     if (s === STATE.SHOP) renderShop();
+    if (s === STATE.CHANGELOG) renderChangelog();
     if (s === STATE.MENU) updateCoinDisplays();
     if (s === STATE.CUSTOMIZE) { resize(); ctx.clearRect(0, 0, W, H); drawArenaBackground(); }
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.0;
+  const APP_VERSION_NUM = 1.01;
+  const APP_VERSION_STRING = '1.0.1';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
+
+  const CHANGELOG = [
+    { version: '1.0.1', date: 'Aug 18, 2026', changes: [
+      'Added the Dash ability — quick burst in the direction you\'re facing with a bit of momentum carry, 3s cooldown',
+      'New Abilities section in the Shop (Dash costs 50 coins)',
+      'Dash gets its own draggable, resizable button in Customize Controls'
+    ]},
+    { version: '1.0', date: 'Aug 17, 2026', changes: [
+      'Initial release'
+    ]}
+  ];
 
   const PUNCH_RANGE = 50;
   const PUNCH_HALF_ANGLE = 50 * Math.PI / 180;
@@ -1445,6 +1618,13 @@
   const PUNCH_COOLDOWN = 3.0;
   const KNOCKBACK_SPEED = 480;
   const STUN_TIME = 0.24;
+
+  const DASH_COOLDOWN = 3.0;
+  const DASH_KICK_DURATION = 0.10;
+  const DASH_KICK_DISTANCE = 70;
+  const DASH_KICK_SPEED = DASH_KICK_DISTANCE / DASH_KICK_DURATION;
+  const DASH_CARRY_SPEED = DASH_KICK_SPEED * 0.25;
+  const DASH_CARRY_DAMPING = 0.95;
 
   let player, cpu, bullets, particles, elapsed, spawnTimer, lastTs, rafId;
   let shake = 0;
@@ -1460,6 +1640,8 @@
       facing: { x: 0, y: 1 },
       kvx: 0, kvy: 0, stunTimer: 0,
       punchCooldown: 0, punchTimer: 0, punchHasHit: false,
+      dashCooldown: 0, dashTimer: 0, dashKickVX: 0, dashKickVY: 0,
+      dashCarryVX: 0, dashCarryVY: 0,
       invulnTimer: 0,
       wanderAngle: Math.random() * Math.PI * 2
     };
@@ -1675,15 +1857,34 @@
   function updatePlayer(dt) {
     if (player.punchCooldown > 0) player.punchCooldown -= dt;
     if (player.punchTimer > 0) player.punchTimer -= dt;
+    if (player.dashCooldown > 0) player.dashCooldown -= dt;
     if (!player.alive) return;
 
     if (player.stunTimer > 0) {
       player.stunTimer -= dt;
+    } else if (player.dashTimer > 0) {
+      player.dashTimer -= dt;
+      player.x += player.dashKickVX * dt;
+      player.y += player.dashKickVY * dt;
+      if (player.dashTimer <= 0) {
+        // kick phase ends; hand off into a gentler decaying carry
+        player.dashCarryVX = player.dashKickVX * (DASH_CARRY_SPEED / DASH_KICK_SPEED);
+        player.dashCarryVY = player.dashKickVY * (DASH_CARRY_SPEED / DASH_KICK_SPEED);
+      }
     } else if (stick.active) {
       player.x += stick.dx * PLAYER_SPEED * dt;
       player.y += stick.dy * PLAYER_SPEED * dt;
       const mag = Math.hypot(stick.dx, stick.dy);
       if (mag > 0.15) player.facing = { x: stick.dx / mag, y: stick.dy / mag };
+    }
+
+    // residual dash momentum keeps carrying for ~1.5-2s, layered on top of
+    // whatever normal movement is happening that same frame
+    if (Math.hypot(player.dashCarryVX, player.dashCarryVY) > 1) {
+      player.x += player.dashCarryVX * dt;
+      player.y += player.dashCarryVY * dt;
+      player.dashCarryVX *= DASH_CARRY_DAMPING;
+      player.dashCarryVY *= DASH_CARRY_DAMPING;
     }
 
     if (Math.hypot(player.kvx, player.kvy) > 1) {
@@ -1692,6 +1893,23 @@
     }
     clampToSquare(player, player.r);
   }
+
+  function triggerDash(e) {
+    e.dashTimer = DASH_KICK_DURATION;
+    e.dashKickVX = e.facing.x * DASH_KICK_SPEED;
+    e.dashKickVY = e.facing.y * DASH_KICK_SPEED;
+    e.dashCooldown = DASH_COOLDOWN;
+    Sound.dash();
+  }
+
+  // ---------- Dash button ----------
+  dashBtn.addEventListener('pointerdown', function(evt) {
+    evt.preventDefault();
+    if (state !== STATE.PLAYING || !player.alive) return;
+    if (!settings.ownedAbilities.includes('dash')) return;
+    if (player.dashCooldown > 0 || player.stunTimer > 0) return;
+    triggerDash(player);
+  });
 
   // ---------- Punch button ----------
   punchBtn.addEventListener('pointerdown', function(evt) {
@@ -1823,6 +2041,12 @@
     const pct = player.punchCooldown > 0 ? Math.min(1, player.punchCooldown / PUNCH_COOLDOWN) : 0;
     punchCdRing.style.setProperty('--cd', pct);
     punchBtn.classList.toggle('ready', pct === 0 && player.alive);
+
+    if (settings.ownedAbilities.includes('dash')) {
+      const dashPct = player.dashCooldown > 0 ? Math.min(1, player.dashCooldown / DASH_COOLDOWN) : 0;
+      dashCdRing.style.setProperty('--cd', dashPct);
+      dashBtn.classList.toggle('ready', dashPct === 0 && player.alive);
+    }
 
     draw();
 
@@ -2107,6 +2331,8 @@
     saveSettings();
     showScreen(tutorialReturnTo);
   });
+  changelogBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.CHANGELOG); });
+  changelogBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SETTINGS); });
   achievementsBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.ACHIEVEMENTS); });
   achievementsBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
   shopBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SHOP); });
@@ -2151,12 +2377,14 @@
       difficulty: 'medium', sound: true, controls: defaultControls(),
       tutorialSeen: false, achievements: {}, coins: 0,
       ownedSkins: ['blue'], equippedSkin: 'blue',
-      totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0
+      totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0,
+      ownedAbilities: []
     };
     saveSettings();
     applyControlLayout();
     applySavedSettingsToUI();
     updateCoinDisplays();
+    updateDashOwnedClass();
     Sound.denied();
     showScreen(STATE.MENU);
   });
@@ -2211,7 +2439,7 @@
   });
 
   // ---------- Customize controls: drag + resize ----------
-  const SIZE_LIMITS = { joystick: { min: 90, max: 190 }, punch: { min: 54, max: 130 } };
+  const SIZE_LIMITS = { joystick: { min: 90, max: 190 }, punch: { min: 54, max: 130 }, dash: { min: 44, max: 110 } };
 
   function makeEditable(el, key) {
     const drag = { mode: null, id: null, startClientX: 0, startClientY: 0, startCenterX: 0, startCenterY: 0, startSize: 0 };
@@ -2275,6 +2503,7 @@
   }
   makeEditable(editJoystick, 'joystick');
   makeEditable(editPunch, 'punch');
+  makeEditable(editDash, 'dash');
 
   // ---------- init from saved settings ----------
   function applySavedSettingsToUI() {
@@ -2322,6 +2551,8 @@
     // Step 5: initial game state built, settings UI synced, first frame ready.
     resetGame();
     applySavedSettingsToUI();
+    updateDashOwnedClass();
+    versionTag.textContent = 'Version ' + APP_VERSION_STRING;
     if (APP_VERSION_NUM >= 1.0 && APP_VERSION_NUM <= 1.2) unlockAchievement('og');
     markStepDone();
 
