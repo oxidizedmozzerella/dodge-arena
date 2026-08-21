@@ -727,6 +727,37 @@
     font-weight: 700;
     letter-spacing: 1px;
   }
+
+  /* Multiplayer */
+  .mp-code-display {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: var(--player);
+    text-shadow: 0 0 18px var(--player-glow);
+    text-align: center;
+    margin: 6px 0;
+  }
+  .mp-status {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+  #mp-join-code-input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--text-bright);
+    font-family: "Courier New", monospace;
+    font-size: 22px;
+    letter-spacing: 6px;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 12px;
+    outline: none;
+  }
 </style>
 </head>
 <body>
@@ -912,7 +943,48 @@
     <div class="menu-buttons">
       <button class="btn primary" id="start-match-btn">Start Match</button>
       <button class="btn" id="training-btn">Training</button>
+      <button class="btn" id="multiplayer-btn">Multiplayer</button>
       <button class="btn" id="matchsetup-back-btn">Back</button>
+    </div>
+  </div>
+
+  <!-- MULTIPLAYER -->
+  <div class="screen hidden" id="multiplayer-screen">
+    <div class="title" style="font-size:28px;">Multiplayer</div>
+
+    <div id="mp-choice">
+      <div class="menu-buttons">
+        <button class="btn primary" id="mp-host-btn">Host a Match</button>
+        <button class="btn" id="mp-join-btn">Join a Match</button>
+        <button class="btn" id="mp-back-btn">Back</button>
+      </div>
+    </div>
+
+    <div id="mp-hosting" class="hidden">
+      <div class="settings-box">
+        <div class="settings-row">
+          <div class="row-label">Your Code</div>
+          <div class="mp-code-display" id="mp-host-code">-----</div>
+          <div class="mp-status" id="mp-host-status">Starting…</div>
+        </div>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn" id="mp-host-cancel-btn">Cancel</button>
+      </div>
+    </div>
+
+    <div id="mp-joining" class="hidden">
+      <div class="settings-box">
+        <div class="settings-row">
+          <div class="row-label">Enter Host's Code</div>
+          <input type="text" id="mp-join-code-input" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocorrect="off" spellcheck="false">
+        </div>
+        <div class="mp-status" id="mp-join-status"></div>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn primary" id="mp-join-connect-btn">Connect</button>
+        <button class="btn" id="mp-join-cancel-btn">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -1108,6 +1180,21 @@
   const playBtn = document.getElementById('play-btn');
   const startMatchBtn = document.getElementById('start-match-btn');
   const trainingBtn = document.getElementById('training-btn');
+  const multiplayerBtn = document.getElementById('multiplayer-btn');
+  const multiplayerScreen = document.getElementById('multiplayer-screen');
+  const mpChoice = document.getElementById('mp-choice');
+  const mpHosting = document.getElementById('mp-hosting');
+  const mpJoining = document.getElementById('mp-joining');
+  const mpHostBtn = document.getElementById('mp-host-btn');
+  const mpJoinBtn = document.getElementById('mp-join-btn');
+  const mpBackBtn = document.getElementById('mp-back-btn');
+  const mpHostCode = document.getElementById('mp-host-code');
+  const mpHostStatus = document.getElementById('mp-host-status');
+  const mpHostCancelBtn = document.getElementById('mp-host-cancel-btn');
+  const mpJoinCodeInput = document.getElementById('mp-join-code-input');
+  const mpJoinStatus = document.getElementById('mp-join-status');
+  const mpJoinConnectBtn = document.getElementById('mp-join-connect-btn');
+  const mpJoinCancelBtn = document.getElementById('mp-join-cancel-btn');
   const tutorialBtn = document.getElementById('tutorial-btn');
   const tutorialDoneBtn = document.getElementById('tutorial-done-btn');
   const achievementsBtn = document.getElementById('achievements-btn');
@@ -1208,7 +1295,8 @@
     { id: 'practice_makes_perfect', title: 'Practice Makes Perfect', desc: 'Enter Training mode for the first time' },
     { id: 'few_tweaks',      title: 'A Few Tweaks',       desc: 'Adjust your controls in Customize Controls' },
     { id: 'og',              title: 'OG',                 desc: 'Played during version 1.0–1.2' },
-    { id: 'money_money_money', title: 'Money Money Money!', desc: 'Have 1000 coins at once' }
+    { id: 'money_money_money', title: 'Money Money Money!', desc: 'Have 1000 coins at once' },
+    { id: 'multiplayer_win', title: 'Real Competition', desc: 'Win a multiplayer match' }
   ];
 
   function unlockAchievement(id) {
@@ -1565,7 +1653,7 @@
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
   // ---------- State machine ----------
-  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog' };
+  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog', MULTIPLAYER: 'multiplayer' };
   let state = STATE.MENU;
   let tutorialReturnTo = STATE.MENU;
 
@@ -1574,6 +1662,7 @@
     const isTrainingPlay = s === STATE.PLAYING && trainingMode;
     menuScreen.classList.toggle('hidden', s !== STATE.MENU);
     matchsetupScreen.classList.toggle('hidden', s !== STATE.MATCHSETUP);
+    multiplayerScreen.classList.toggle('hidden', s !== STATE.MULTIPLAYER);
     settingsScreen.classList.toggle('hidden', s !== STATE.SETTINGS);
     gameoverScreen.classList.toggle('hidden', s !== STATE.GAMEOVER);
     tutorialScreen.classList.toggle('hidden', s !== STATE.TUTORIAL);
@@ -1591,17 +1680,24 @@
     if (s === STATE.SHOP) renderShop();
     if (s === STATE.CHANGELOG) renderChangelog();
     if (s === STATE.MENU) updateCoinDisplays();
+    if (s === STATE.MULTIPLAYER) resetMultiplayerUI();
     if (s === STATE.CUSTOMIZE) { resize(); ctx.clearRect(0, 0, W, H); drawArenaBackground(); }
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.01;
-  const APP_VERSION_STRING = '1.0.1';
+  const APP_VERSION_NUM = 1.1;
+  const APP_VERSION_STRING = '1.1.0';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
 
   const CHANGELOG = [
+    { version: '1.1.0', date: 'Aug 18, 2026', changes: [
+      'Added Multiplayer — host or join a real-time match against another player, no CPU',
+      'Host gets a 5-character code to share; joining is instant with WebRTC once connected',
+      'Opponents render with their own actual equipped skin instead of a generic look',
+      'New "Real Competition" achievement for winning a multiplayer match'
+    ]},
     { version: '1.0.1', date: 'Aug 18, 2026', changes: [
       'Added the Dash ability — quick burst in the direction you\'re facing with a bit of momentum carry, 3s cooldown',
       'New Abilities section in the Shop (Dash costs 50 coins)',
@@ -1664,6 +1760,226 @@
   }
 
   function updateDeathUI() { deathsStat.textContent = 'Deaths: ' + deathCount; }
+
+  // ---------- Multiplayer (WebRTC via PeerJS) ----------
+  let netMode = null; // null | 'host' | 'client'
+  let lastMatchWasNet = false;
+  let netPeer = null;
+  let netConn = null;
+  let remoteEquippedSkin = 'blue';
+  let latestRemoteInput = { dx: 0, dy: 0 };
+  let clientEndHandled = false;
+  const NET_ROOM_PREFIX = 'dodgearena-';
+
+  function resetMultiplayerUI() {
+    mpChoice.classList.remove('hidden');
+    mpHosting.classList.add('hidden');
+    mpJoining.classList.add('hidden');
+    mpJoinCodeInput.value = '';
+    mpJoinStatus.textContent = '';
+    mpHostStatus.textContent = 'Starting…';
+  }
+
+  function teardownNet() {
+    if (netConn) { try { netConn.close(); } catch (e) {} netConn = null; }
+    if (netPeer) { try { netPeer.destroy(); } catch (e) {} netPeer = null; }
+    netMode = null;
+  }
+
+  function generateRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  // PeerJS is loaded on demand, not up front, so a fully-offline solo launch
+  // never has to wait on (or fail because of) a network request it doesn't need.
+  let peerJsLoadPromise = null;
+  function loadPeerJS() {
+    if (window.Peer) return Promise.resolve();
+    if (peerJsLoadPromise) return peerJsLoadPromise;
+    peerJsLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => { peerJsLoadPromise = null; reject(new Error('load failed')); };
+      document.head.appendChild(script);
+    });
+    return peerJsLoadPromise;
+  }
+
+  function hostMultiplayer() {
+    teardownNet();
+    mpChoice.classList.add('hidden');
+    mpHosting.classList.remove('hidden');
+    mpHostCode.textContent = '-----';
+    mpHostStatus.textContent = 'Connecting…';
+    loadPeerJS().then(() => {
+      const code = generateRoomCode();
+      mpHostCode.textContent = code;
+      mpHostStatus.textContent = 'Waiting for opponent…';
+      netMode = 'host';
+      netPeer = new Peer(NET_ROOM_PREFIX + code);
+      netPeer.on('connection', (conn) => {
+        netConn = conn;
+        setupNetConnHandlers();
+        conn.on('open', () => {
+          mpHostStatus.textContent = 'Opponent connected!';
+          netConn.send({ type: 'hello', skin: settings.equippedSkin });
+        });
+      });
+      netPeer.on('error', (err) => {
+        mpHostStatus.textContent = 'Error: ' + (err && err.type ? err.type : 'connection failed');
+      });
+    }).catch(() => {
+      mpHostStatus.textContent = 'Multiplayer needs an internet connection.';
+    });
+  }
+
+  function joinMultiplayer(code) {
+    teardownNet();
+    mpJoinStatus.textContent = 'Connecting…';
+    loadPeerJS().then(() => {
+      netMode = 'client';
+      netPeer = new Peer();
+      netPeer.on('open', () => {
+        netConn = netPeer.connect(NET_ROOM_PREFIX + code.toUpperCase());
+        setupNetConnHandlers();
+        netConn.on('open', () => {
+          mpJoinStatus.textContent = 'Connected!';
+          netConn.send({ type: 'hello', skin: settings.equippedSkin });
+        });
+      });
+      netPeer.on('error', (err) => {
+        mpJoinStatus.textContent = 'Error: ' + (err && err.type ? err.type : 'connection failed');
+      });
+    }).catch(() => {
+      mpJoinStatus.textContent = 'Multiplayer needs an internet connection.';
+    });
+  }
+
+  function setupNetConnHandlers() {
+    netConn.on('data', handleNetData);
+    netConn.on('close', handleNetDisconnect);
+  }
+
+  function handleNetDisconnect() {
+    if (state === STATE.PLAYING) {
+      cancelAnimationFrame(rafId);
+      teardownNet();
+      showScreen(STATE.MENU);
+    }
+  }
+
+  let mpBothReady = { host: false, client: false };
+  function handleNetData(msg) {
+    if (msg.type === 'hello') {
+      remoteEquippedSkin = msg.skin || 'blue';
+      if (netMode === 'host') {
+        startMultiplayerMatch();
+      }
+    } else if (msg.type === 'input' && netMode === 'host') {
+      latestRemoteInput = msg;
+    } else if (msg.type === 'action' && netMode === 'host') {
+      if (msg.action === 'punch' && cpu.punchCooldown <= 0 && cpu.stunTimer <= 0) triggerPunch(cpu);
+      if (msg.action === 'dash' && cpu.dashCooldown <= 0 && cpu.stunTimer <= 0) triggerDash(cpu);
+    } else if (msg.type === 'state' && netMode === 'client') {
+      if (state !== STATE.PLAYING) startMultiplayerMatch();
+      player = msg.guest;
+      cpu = msg.host;
+      bullets = msg.bullets;
+      elapsed = msg.elapsed;
+    }
+  }
+
+  function packEntity(e) {
+    return {
+      x: e.x, y: e.y, r: e.r, alive: e.alive,
+      facing: { x: e.facing.x, y: e.facing.y },
+      punchTimer: e.punchTimer, punchCooldown: e.punchCooldown,
+      dashCooldown: e.dashCooldown, invulnTimer: e.invulnTimer, stunTimer: e.stunTimer
+    };
+  }
+
+  function sendNetInput() {
+    if (netConn && netConn.open) netConn.send({ type: 'input', dx: stick.dx, dy: stick.dy });
+  }
+
+  function updateRemotePlayer(dt, e, input) {
+    if (e.punchCooldown > 0) e.punchCooldown -= dt;
+    if (e.punchTimer > 0) e.punchTimer -= dt;
+    if (e.dashCooldown > 0) e.dashCooldown -= dt;
+    if (!e.alive) return;
+
+    if (e.stunTimer > 0) {
+      e.stunTimer -= dt;
+    } else if (e.dashTimer > 0) {
+      e.dashTimer -= dt;
+      e.x += e.dashKickVX * dt;
+      e.y += e.dashKickVY * dt;
+      if (e.dashTimer <= 0) {
+        e.dashCarryVX = e.dashKickVX * (DASH_CARRY_SPEED / DASH_KICK_SPEED);
+        e.dashCarryVY = e.dashKickVY * (DASH_CARRY_SPEED / DASH_KICK_SPEED);
+      }
+    } else if (input && (Math.abs(input.dx) > 0.001 || Math.abs(input.dy) > 0.001)) {
+      e.x += input.dx * PLAYER_SPEED * dt;
+      e.y += input.dy * PLAYER_SPEED * dt;
+      const mag = Math.hypot(input.dx, input.dy);
+      if (mag > 0.15) e.facing = { x: input.dx / mag, y: input.dy / mag };
+    }
+
+    if (Math.hypot(e.dashCarryVX, e.dashCarryVY) > 1) {
+      e.x += e.dashCarryVX * dt; e.y += e.dashCarryVY * dt;
+      e.dashCarryVX *= DASH_CARRY_DAMPING; e.dashCarryVY *= DASH_CARRY_DAMPING;
+    }
+    if (Math.hypot(e.kvx, e.kvy) > 1) {
+      e.x += e.kvx * dt; e.y += e.kvy * dt;
+      e.kvx *= 0.90; e.kvy *= 0.90;
+    }
+    clampToSquare(e, e.r);
+  }
+
+  function updateAbilityUI() {
+    const pct = player.punchCooldown > 0 ? Math.min(1, player.punchCooldown / PUNCH_COOLDOWN) : 0;
+    punchCdRing.style.setProperty('--cd', pct);
+    punchBtn.classList.toggle('ready', pct === 0 && player.alive);
+    if (settings.ownedAbilities.includes('dash')) {
+      const dashPct = player.dashCooldown > 0 ? Math.min(1, player.dashCooldown / DASH_COOLDOWN) : 0;
+      dashCdRing.style.setProperty('--cd', dashPct);
+      dashBtn.classList.toggle('ready', dashPct === 0 && player.alive);
+    }
+  }
+
+  function netClientStep(ts) {
+    if (state !== STATE.PLAYING) return;
+    sendNetInput();
+    if (player && cpu) {
+      updateAbilityUI();
+      draw();
+      if (!clientEndHandled && (!player.alive || !cpu.alive)) {
+        clientEndHandled = true;
+        endGame();
+        return;
+      }
+    }
+    rafId = requestAnimationFrame(netClientStep);
+  }
+
+  function startMultiplayerMatch() {
+    Sound.start();
+    trainingMode = false;
+    clientEndHandled = false;
+    resize();
+    resetGame();
+    diffStat.textContent = 'MULTIPLAYER';
+    showScreen(STATE.PLAYING);
+    if (netMode === 'host') {
+      rafId = requestAnimationFrame(step);
+    } else {
+      rafId = requestAnimationFrame(netClientStep);
+    }
+  }
 
   function clampToSquare(pt, radius) {
     const min = radius, maxX = square.side - radius, maxY = square.side - radius;
@@ -1908,6 +2224,7 @@
     if (state !== STATE.PLAYING || !player.alive) return;
     if (!settings.ownedAbilities.includes('dash')) return;
     if (player.dashCooldown > 0 || player.stunTimer > 0) return;
+    if (netMode === 'client') { if (netConn && netConn.open) netConn.send({ type: 'action', action: 'dash' }); return; }
     triggerDash(player);
   });
 
@@ -1916,6 +2233,7 @@
     evt.preventDefault();
     if (state !== STATE.PLAYING || !player.alive) return;
     if (player.punchCooldown > 0 || player.stunTimer > 0) return;
+    if (netMode === 'client') { if (netConn && netConn.open) netConn.send({ type: 'action', action: 'punch' }); return; }
     triggerPunch(player);
   });
 
@@ -1985,7 +2303,8 @@
     }
 
     updatePlayer(dt);
-    if (!trainingMode) updateCpu(dt);
+    if (netMode === 'host') updateRemotePlayer(dt, cpu, latestRemoteInput);
+    else if (!trainingMode) updateCpu(dt);
     updateParticles(dt);
     if (player.invulnTimer > 0) player.invulnTimer -= dt;
 
@@ -2038,17 +2357,19 @@
 
     if (!trainingMode) timerStat.textContent = elapsed.toFixed(1) + 's';
 
-    const pct = player.punchCooldown > 0 ? Math.min(1, player.punchCooldown / PUNCH_COOLDOWN) : 0;
-    punchCdRing.style.setProperty('--cd', pct);
-    punchBtn.classList.toggle('ready', pct === 0 && player.alive);
-
-    if (settings.ownedAbilities.includes('dash')) {
-      const dashPct = player.dashCooldown > 0 ? Math.min(1, player.dashCooldown / DASH_COOLDOWN) : 0;
-      dashCdRing.style.setProperty('--cd', dashPct);
-      dashBtn.classList.toggle('ready', dashPct === 0 && player.alive);
-    }
+    updateAbilityUI();
 
     draw();
+
+    if (netMode === 'host' && netConn && netConn.open) {
+      netConn.send({
+        type: 'state',
+        host: packEntity(player),
+        guest: packEntity(cpu),
+        bullets: bullets.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy, r: b.r, trail: b.trail })),
+        elapsed: elapsed
+      });
+    }
 
     if (!trainingMode && (!player.alive || !cpu.alive)) {
       if (particles.length > 0) { rafId = requestAnimationFrame(step); return; }
@@ -2098,7 +2419,14 @@
     if (!trainingMode && cpu.alive) drawPunchFX(cpu);
     if (player.alive) drawPunchFX(player);
 
-    if (!trainingMode && cpu.alive) drawEntity(cpu, '#ff7a59', 'rgba(255,122,89,0.6)');
+    if (!trainingMode && cpu.alive) {
+      if (netMode) {
+        const oppSkin = PLAYER_SKINS.find(s => s.id === remoteEquippedSkin) || PLAYER_SKINS[0];
+        drawEntity(cpu, oppSkin.hex, hexToRgba(oppSkin.hex, 0.6), oppSkin);
+      } else {
+        drawEntity(cpu, '#ff7a59', 'rgba(255,122,89,0.6)');
+      }
+    }
     if (player.alive) {
       const skin = PLAYER_SKINS.find(s => s.id === settings.equippedSkin) || PLAYER_SKINS[0];
       drawEntity(player, skin.hex, hexToRgba(skin.hex, 0.6), skin);
@@ -2264,6 +2592,23 @@
     let headline, cls;
     resultCoins.classList.add('hidden');
     resultCoins.textContent = '';
+    lastMatchWasNet = !!netMode;
+    if (netMode) {
+      if (!player.alive && !cpu.alive) { headline = 'DRAW'; cls = 'draw'; }
+      else if (!player.alive) { headline = 'OPPONENT WINS'; cls = 'lose'; Sound.lose(); }
+      else {
+        headline = 'YOU WIN'; cls = 'win'; Sound.win();
+        unlockAchievement('multiplayer_win');
+      }
+      teardownNet();
+      retryBtn.textContent = 'Rematch';
+      resultHeadline.textContent = headline;
+      resultHeadline.className = 'result-headline ' + cls;
+      resultTime.textContent = 'Survived ' + elapsed.toFixed(1) + 's';
+      showScreen(STATE.GAMEOVER);
+      return;
+    }
+    retryBtn.textContent = 'Play Again';
     if (!player.alive && elapsed < 2) unlockAchievement('spawn_killed');
     if (!player.alive && !cpu.alive) { headline = 'DRAW'; cls = 'draw'; }
     else if (!player.alive) { headline = 'CPU WINS'; cls = 'lose'; Sound.lose(); }
@@ -2324,6 +2669,22 @@
   startMatchBtn.addEventListener('click', () => { Sound.click(); startGame(); });
   trainingBtn.addEventListener('click', () => { Sound.click(); startTraining(); });
   leaveTrainingBtn.addEventListener('click', leaveTraining);
+  multiplayerBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MULTIPLAYER); });
+  mpBackBtn.addEventListener('click', () => { Sound.click(); teardownNet(); showScreen(STATE.MATCHSETUP); });
+  mpHostBtn.addEventListener('click', () => { Sound.click(); hostMultiplayer(); });
+  mpJoinBtn.addEventListener('click', () => {
+    Sound.click();
+    mpChoice.classList.add('hidden');
+    mpJoining.classList.remove('hidden');
+  });
+  mpHostCancelBtn.addEventListener('click', () => { Sound.click(); teardownNet(); resetMultiplayerUI(); });
+  mpJoinCancelBtn.addEventListener('click', () => { Sound.click(); teardownNet(); resetMultiplayerUI(); });
+  mpJoinConnectBtn.addEventListener('click', () => {
+    const code = mpJoinCodeInput.value.trim();
+    if (code.length < 4) { mpJoinStatus.textContent = 'Enter the full code.'; return; }
+    Sound.click();
+    joinMultiplayer(code);
+  });
   tutorialBtn.addEventListener('click', () => { Sound.click(); tutorialReturnTo = STATE.SETTINGS; showScreen(STATE.TUTORIAL); });
   tutorialDoneBtn.addEventListener('click', () => {
     Sound.click();
@@ -2392,7 +2753,11 @@
   matchsetupBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
   settingsBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SETTINGS); });
   settingsBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
-  retryBtn.addEventListener('click', () => { Sound.click(); startGame(); });
+  retryBtn.addEventListener('click', () => {
+    Sound.click();
+    if (lastMatchWasNet) { showScreen(STATE.MULTIPLAYER); return; }
+    startGame();
+  });
   menuBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
   customizeControlsBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.CUSTOMIZE); });
   doneCustomizeBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SETTINGS); });
