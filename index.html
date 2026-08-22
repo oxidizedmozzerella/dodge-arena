@@ -460,6 +460,111 @@
   }
   .admin-btn:active { background: rgba(255,255,255,0.1); }
 
+  .username-btn {
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top));
+    right: 54px;
+    max-width: 150px;
+    padding: 7px 12px;
+    border-radius: 9px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--panel-border);
+    color: var(--text-bright);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .username-btn:active { background: rgba(255,255,255,0.1); }
+
+  .username-modal-backdrop {
+    position: fixed; inset: 0;
+    z-index: 600;
+    background: rgba(4,5,9,0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .username-modal-backdrop.hidden { display: none; }
+  #username-input {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--text-bright);
+    font-family: inherit;
+    font-size: 16px;
+    padding: 12px 14px;
+    outline: none;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .username-char-count {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .daily-modal-backdrop {
+    position: fixed; inset: 0;
+    z-index: 600;
+    background: rgba(4,5,9,0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .daily-modal-backdrop.hidden { display: none; }
+  .daily-modal {
+    position: relative;
+    width: 100%; max-width: 340px;
+    background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    border: 1px solid var(--panel-border);
+    border-radius: 22px;
+    padding: 28px 20px 22px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .daily-rewards-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 16px 0 6px;
+  }
+  .daily-day-card {
+    width: 74px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    opacity: 0.45;
+  }
+  .daily-day-card.claimed { opacity: 0.35; }
+  .daily-day-card.current {
+    opacity: 1;
+    border-color: rgba(91,141,255,0.6);
+    box-shadow: 0 0 16px rgba(91,141,255,0.3);
+  }
+  .daily-day-label {
+    font-size: 9px; font-weight: 800; color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+  .daily-day-icon { font-size: 20px; }
+  .daily-day-reward {
+    font-size: 9px; font-weight: 700; color: var(--text-bright);
+    text-align: center; line-height: 1.25;
+  }
+  #daily-claim-btn { min-width: 200px; margin-top: 8px; }
+  #daily-claim-btn:disabled { opacity: 0.5; }
+
   .version-tag {
     position: absolute;
     bottom: calc(14px + env(safe-area-inset-bottom));
@@ -845,6 +950,7 @@
 
   <!-- MENU -->
   <div class="screen" id="menu-screen">
+    <button class="username-btn" id="username-btn">👤 Set Username</button>
     <button class="admin-btn" id="admin-btn">⚙</button>
     <div class="title">DODGE<br><span>ARENA</span></div>
     <div class="subtitle">Developed By Ethan Malaviarachchi</div>
@@ -856,6 +962,28 @@
       <button class="btn" id="settings-btn">Settings</button>
     </div>
     <div class="version-tag" id="version-tag">Version 1.0.1</div>
+  </div>
+
+  <!-- USERNAME -->
+  <div class="username-modal-backdrop hidden" id="username-modal-backdrop">
+    <div class="daily-modal">
+      <button class="skin-modal-close" id="username-modal-close">✕</button>
+      <div class="title" style="font-size:22px; margin-bottom:0;">Username</div>
+      <input type="text" id="username-input" maxlength="15" placeholder="Enter username" autocorrect="off" spellcheck="false">
+      <div class="username-char-count" id="username-char-count">0 / 15</div>
+      <div class="mp-status" id="username-status"></div>
+      <button class="btn primary" id="username-save-btn">Set Username (Free)</button>
+    </div>
+  </div>
+
+  <!-- DAILY REWARDS -->
+  <div class="daily-modal-backdrop hidden" id="daily-modal-backdrop">
+    <div class="daily-modal">
+      <button class="skin-modal-close" id="daily-modal-close">✕</button>
+      <div class="title" style="font-size:22px; margin-bottom:0;">Daily Rewards</div>
+      <div class="daily-rewards-grid" id="daily-rewards-grid"></div>
+      <button class="btn primary" id="daily-claim-btn">Claim</button>
+    </div>
   </div>
 
   <!-- ADMIN PANEL -->
@@ -875,6 +1003,10 @@
       </button>
       <button class="ghost-btn" id="admin-all-achievements-btn">
         <span>Unlock All Achievements</span>
+        <span class="arrow">›</span>
+      </button>
+      <button class="ghost-btn" id="admin-reset-daily-btn">
+        <span>Reset Daily Reward Timer</span>
         <span class="arrow">›</span>
       </button>
       <button class="ghost-btn" id="admin-reset-btn">
@@ -1038,6 +1170,10 @@
         <span>Customize Controls</span>
         <span class="arrow">›</span>
       </button>
+      <button class="ghost-btn" id="daily-rewards-btn">
+        <span>Daily Rewards</span>
+        <span class="arrow">›</span>
+      </button>
       <button class="ghost-btn" id="tutorial-btn">
         <span>How To Play</span>
         <span class="arrow">›</span>
@@ -1087,7 +1223,7 @@
   }
 
   // ---------- Persisted settings ----------
-  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0, ownedAbilities: [] };
+  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0, ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null };
   try {
     const saved = JSON.parse(localStorage.getItem('dodgeArenaSettings') || 'null');
     if (saved) {
@@ -1228,6 +1364,19 @@
   const adminAllSkinsBtn = document.getElementById('admin-all-skins-btn');
   const adminAllAchievementsBtn = document.getElementById('admin-all-achievements-btn');
   const adminResetBtn = document.getElementById('admin-reset-btn');
+  const adminResetDailyBtn = document.getElementById('admin-reset-daily-btn');
+  const dailyRewardsBtn = document.getElementById('daily-rewards-btn');
+  const dailyModalBackdrop = document.getElementById('daily-modal-backdrop');
+  const dailyModalClose = document.getElementById('daily-modal-close');
+  const dailyRewardsGrid = document.getElementById('daily-rewards-grid');
+  const dailyClaimBtn = document.getElementById('daily-claim-btn');
+  const usernameBtn = document.getElementById('username-btn');
+  const usernameModalBackdrop = document.getElementById('username-modal-backdrop');
+  const usernameModalClose = document.getElementById('username-modal-close');
+  const usernameInput = document.getElementById('username-input');
+  const usernameCharCount = document.getElementById('username-char-count');
+  const usernameStatus = document.getElementById('username-status');
+  const usernameSaveBtn = document.getElementById('username-save-btn');
   const matchsetupBackBtn = document.getElementById('matchsetup-back-btn');
   const settingsBtn = document.getElementById('settings-btn');
   const settingsBackBtn = document.getElementById('settings-back-btn');
@@ -1431,6 +1580,90 @@
 
   function checkCoinsAchievement() {
     if (settings.coins >= 1000) unlockAchievement('money_money_money');
+  }
+
+  // ---------- Daily Rewards ----------
+  const DAILY_REWARDS = [
+    { day: 1, type: 'coins', amount: 25,  label: '25 Coins',            icon: '🪙' },
+    { day: 2, type: 'coins', amount: 50,  label: '50 Coins',            icon: '🪙' },
+    { day: 3, type: 'effect',             label: 'Random Win Effect',   icon: '✨' },
+    { day: 4, type: 'coins', amount: 100, label: '100 Coins',           icon: '🪙' },
+    { day: 5, type: 'bulletskin',         label: 'Random Bullet Skin',  icon: '🔫' },
+    { day: 6, type: 'coins', amount: 150, label: '150 Coins',           icon: '🪙' },
+    { day: 7, type: 'specialskin',        label: 'Special Skin',        icon: '🎁' }
+  ];
+
+  function todayDateString() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function daysBetween(dateStr1, dateStr2) {
+    const d1 = new Date(dateStr1 + 'T00:00:00');
+    const d2 = new Date(dateStr2 + 'T00:00:00');
+    return Math.round((d2 - d1) / 86400000);
+  }
+  function getDailyRewardStatus() {
+    const today = todayDateString();
+    if (!settings.lastClaimDate) return { available: true, day: 1 };
+    if (settings.lastClaimDate === today) return { available: false, day: settings.dailyStreak || 1 };
+    const diff = daysBetween(settings.lastClaimDate, today);
+    if (diff === 1) return { available: true, day: ((settings.dailyStreak || 0) % 7) + 1 };
+    return { available: true, day: 1 }; // missed a day (or clock rolled back) — restart the cycle
+  }
+
+  let dailyClaimDay = null;
+  function renderDailyRewards(currentDay) {
+    dailyRewardsGrid.innerHTML = '';
+    for (const r of DAILY_REWARDS) {
+      const card = document.createElement('div');
+      let cls = 'daily-day-card';
+      if (r.day < currentDay) cls += ' claimed';
+      else if (r.day === currentDay) cls += ' current';
+      card.className = cls;
+      card.innerHTML =
+        '<div class="daily-day-label">DAY ' + r.day + '</div>' +
+        '<div class="daily-day-icon">' + r.icon + '</div>' +
+        '<div class="daily-day-reward">' + r.label + '</div>';
+      dailyRewardsGrid.appendChild(card);
+    }
+  }
+
+  function openDailyRewardModal() {
+    const status = getDailyRewardStatus();
+    const displayDay = status.available ? status.day : (settings.dailyStreak || 1);
+    renderDailyRewards(displayDay);
+    if (status.available) {
+      dailyClaimDay = status.day;
+      dailyClaimBtn.textContent = 'Claim Day ' + status.day;
+      dailyClaimBtn.disabled = false;
+    } else {
+      dailyClaimDay = null;
+      dailyClaimBtn.textContent = 'Come Back Tomorrow';
+      dailyClaimBtn.disabled = true;
+    }
+    dailyModalBackdrop.classList.remove('hidden');
+  }
+
+  function claimDailyReward() {
+    if (!dailyClaimDay) return;
+    const reward = DAILY_REWARDS.find(r => r.day === dailyClaimDay);
+    if (reward.type === 'coins') {
+      settings.coins += reward.amount;
+      updateCoinDisplays();
+      checkCoinsAchievement();
+      showUnlockToast('🪙', 'Daily Reward', '+' + reward.amount + ' Coins');
+    } else {
+      showUnlockToast(reward.icon, 'Daily Reward', reward.label + ' — coming soon!');
+    }
+    settings.dailyStreak = dailyClaimDay;
+    settings.lastClaimDate = todayDateString();
+    saveSettings();
+    Sound.buy();
+    const cardEl = dailyRewardsGrid.children[dailyClaimDay - 1];
+    if (cardEl) { cardEl.classList.remove('current'); cardEl.classList.add('claimed'); }
+    dailyClaimBtn.textContent = 'Claimed!';
+    dailyClaimBtn.disabled = true;
+    dailyClaimDay = null;
   }
 
   let svgGradientCounter = 0;
@@ -1685,13 +1918,20 @@
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.1;
-  const APP_VERSION_STRING = '1.1.0';
+  const APP_VERSION_NUM = 1.11;
+  const APP_VERSION_STRING = '1.1.1';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
 
   const CHANGELOG = [
+    { version: '1.1.1', date: 'Aug 19, 2026', changes: [
+      'Added Daily Rewards — a 7-day streak of coins and bonus prizes, pops up automatically when one is ready to claim',
+      'Find Daily Rewards anytime under Settings',
+      'Win effects, bullet skins, and the special skin are previewed in the rewards list — coming in a future update',
+      'Added Usernames — set one for free, 150 coins to change it after that',
+      'Your opponent\'s real username now shows up during multiplayer matches'
+    ]},
     { version: '1.1.0', date: 'Aug 18, 2026', changes: [
       'Added Multiplayer — host or join a real-time match against another player, no CPU',
       'Host gets a 5-character code to share; joining is instant with WebRTC once connected',
@@ -1767,6 +2007,7 @@
   let netPeer = null;
   let netConn = null;
   let remoteEquippedSkin = 'blue';
+  let remoteUsername = 'Opponent';
   let latestRemoteInput = { dx: 0, dy: 0 };
   let clientEndHandled = false;
   const NET_ROOM_PREFIX = 'dodgearena-';
@@ -1826,7 +2067,7 @@
         setupNetConnHandlers();
         conn.on('open', () => {
           mpHostStatus.textContent = 'Opponent connected!';
-          netConn.send({ type: 'hello', skin: settings.equippedSkin });
+          netConn.send({ type: 'hello', skin: settings.equippedSkin, username: settings.username || 'Guest' });
         });
       });
       netPeer.on('error', (err) => {
@@ -1848,7 +2089,7 @@
         setupNetConnHandlers();
         netConn.on('open', () => {
           mpJoinStatus.textContent = 'Connected!';
-          netConn.send({ type: 'hello', skin: settings.equippedSkin });
+          netConn.send({ type: 'hello', skin: settings.equippedSkin, username: settings.username || 'Guest' });
         });
       });
       netPeer.on('error', (err) => {
@@ -1876,8 +2117,12 @@
   function handleNetData(msg) {
     if (msg.type === 'hello') {
       remoteEquippedSkin = msg.skin || 'blue';
+      remoteUsername = msg.username || 'Opponent';
       if (netMode === 'host') {
+        mpHostStatus.textContent = 'Connected to ' + remoteUsername + '!';
         startMultiplayerMatch();
+      } else {
+        mpJoinStatus.textContent = 'Connected to ' + remoteUsername + '!';
       }
     } else if (msg.type === 'input' && netMode === 'host') {
       latestRemoteInput = msg;
@@ -1972,7 +2217,7 @@
     clientEndHandled = false;
     resize();
     resetGame();
-    diffStat.textContent = 'MULTIPLAYER';
+    diffStat.textContent = 'VS ' + remoteUsername.toUpperCase();
     showScreen(STATE.PLAYING);
     if (netMode === 'host') {
       rafId = requestAnimationFrame(step);
@@ -2705,6 +2950,52 @@
   // ---------- Admin panel (testing utility) ----------
   adminBtn.addEventListener('click', () => { Sound.click(); adminCoinsInput.value = ''; showScreen(STATE.ADMIN); });
   adminBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
+  dailyRewardsBtn.addEventListener('click', () => { Sound.click(); openDailyRewardModal(); });
+  dailyModalClose.addEventListener('click', () => { Sound.click(); dailyModalBackdrop.classList.add('hidden'); });
+  dailyModalBackdrop.addEventListener('click', (e) => { if (e.target === dailyModalBackdrop) dailyModalBackdrop.classList.add('hidden'); });
+  dailyClaimBtn.addEventListener('click', claimDailyReward);
+
+  function updateUsernameDisplay() {
+    usernameBtn.textContent = settings.username ? ('👤 ' + settings.username) : '👤 Set Username';
+  }
+  function updateUsernameCharCount() {
+    usernameCharCount.textContent = usernameInput.value.length + ' / 15';
+  }
+  function openUsernameModal() {
+    usernameInput.value = settings.username || '';
+    updateUsernameCharCount();
+    usernameStatus.textContent = '';
+    usernameSaveBtn.textContent = settings.username ? 'Change — 150 🪙' : 'Set Username (Free)';
+    usernameModalBackdrop.classList.remove('hidden');
+  }
+  function saveUsername() {
+    const val = usernameInput.value.trim();
+    if (val.length < 3 || val.length > 15) {
+      usernameStatus.textContent = 'Must be 3–15 characters.';
+      Sound.denied();
+      return;
+    }
+    const isFirstTime = !settings.username;
+    if (!isFirstTime) {
+      if (settings.coins < 150) {
+        usernameStatus.textContent = 'Not enough coins.';
+        Sound.denied();
+        return;
+      }
+      settings.coins -= 150;
+      updateCoinDisplays();
+    }
+    settings.username = val;
+    saveSettings();
+    updateUsernameDisplay();
+    Sound.buy();
+    usernameModalBackdrop.classList.add('hidden');
+  }
+  usernameBtn.addEventListener('click', () => { Sound.click(); openUsernameModal(); });
+  usernameModalClose.addEventListener('click', () => { Sound.click(); usernameModalBackdrop.classList.add('hidden'); });
+  usernameModalBackdrop.addEventListener('click', (e) => { if (e.target === usernameModalBackdrop) usernameModalBackdrop.classList.add('hidden'); });
+  usernameInput.addEventListener('input', updateUsernameCharCount);
+  usernameSaveBtn.addEventListener('click', saveUsername);
 
   function addAdminCoins() {
     const amount = Math.floor(Number(adminCoinsInput.value));
@@ -2732,6 +3023,13 @@
     Sound.buy();
   });
 
+  adminResetDailyBtn.addEventListener('click', () => {
+    settings.lastClaimDate = null;
+    settings.dailyStreak = 0;
+    saveSettings();
+    Sound.buy();
+  });
+
   adminResetBtn.addEventListener('click', () => {
     if (!confirm('Reset all coins, skins, and achievements? This cannot be undone.')) return;
     settings = {
@@ -2739,13 +3037,14 @@
       tutorialSeen: false, achievements: {}, coins: 0,
       ownedSkins: ['blue'], equippedSkin: 'blue',
       totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0,
-      ownedAbilities: []
+      ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null
     };
     saveSettings();
     applyControlLayout();
     applySavedSettingsToUI();
     updateCoinDisplays();
     updateDashOwnedClass();
+    updateUsernameDisplay();
     Sound.denied();
     showScreen(STATE.MENU);
   });
@@ -2875,6 +3174,7 @@
     document.getElementById('diff-segmented').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.val === settings.difficulty));
     document.getElementById('sound-segmented').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.val === (settings.sound ? 'on' : 'off')));
     updateMuteIcon();
+    updateUsernameDisplay();
   }
 
   // ---------- Boot sequence with real progress tracking ----------
@@ -2927,6 +3227,7 @@
       showScreen(STATE.TUTORIAL);
     } else {
       showScreen(STATE.MENU);
+      if (getDailyRewardStatus().available) openDailyRewardModal();
     }
   }
 

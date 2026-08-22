@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dodge-arena-v10';
+const CACHE_NAME = 'dodge-arena-v12';
 const FILES_TO_CACHE = [
   './',
   './index.html',
