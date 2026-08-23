@@ -849,7 +849,7 @@
     color: var(--text-dim);
     font-weight: 600;
   }
-  #mp-join-code-input {
+  .code-input {
     width: 100%;
     background: rgba(0,0,0,0.3);
     border: 1px solid var(--panel-border);
@@ -863,6 +863,7 @@
     padding: 12px;
     outline: none;
   }
+  #admin-code-input { margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -986,6 +987,17 @@
     </div>
   </div>
 
+  <!-- ADMIN CODE GATE -->
+  <div class="username-modal-backdrop hidden" id="admin-code-modal-backdrop">
+    <div class="daily-modal">
+      <button class="skin-modal-close" id="admin-code-modal-close">✕</button>
+      <div class="title" style="font-size:22px; margin-bottom:0;">Admin Access</div>
+      <input type="text" id="admin-code-input" class="code-input" placeholder="Enter code" autocapitalize="characters" autocorrect="off" spellcheck="false">
+      <div class="mp-status" id="admin-code-status"></div>
+      <button class="btn primary" id="admin-code-submit-btn">Unlock</button>
+    </div>
+  </div>
+
   <!-- ADMIN PANEL -->
   <div class="screen hidden" id="admin-screen">
     <div class="title" style="font-size:26px;">Admin Panel</div>
@@ -1060,7 +1072,18 @@
 
   <!-- MATCH SETUP -->
   <div class="screen hidden" id="matchsetup-screen">
-    <div class="title" style="font-size:28px;">Match Setup</div>
+    <div class="title" style="font-size:28px;">Play</div>
+    <div class="menu-buttons">
+      <button class="btn primary" id="multiplayer-btn">Multiplayer</button>
+      <button class="btn" id="cpu-btn">CPU</button>
+      <button class="btn" id="training-btn">Training</button>
+      <button class="btn" id="matchsetup-back-btn">Back</button>
+    </div>
+  </div>
+
+  <!-- CPU DIFFICULTY -->
+  <div class="screen hidden" id="cpu-setup-screen">
+    <div class="title" style="font-size:28px;">CPU Difficulty</div>
     <div class="settings-box">
       <div class="settings-row">
         <div class="row-label">CPU Difficulty</div>
@@ -1074,9 +1097,7 @@
     </div>
     <div class="menu-buttons">
       <button class="btn primary" id="start-match-btn">Start Match</button>
-      <button class="btn" id="training-btn">Training</button>
-      <button class="btn" id="multiplayer-btn">Multiplayer</button>
-      <button class="btn" id="matchsetup-back-btn">Back</button>
+      <button class="btn" id="cpu-setup-back-btn">Back</button>
     </div>
   </div>
 
@@ -1109,7 +1130,7 @@
       <div class="settings-box">
         <div class="settings-row">
           <div class="row-label">Enter Host's Code</div>
-          <input type="text" id="mp-join-code-input" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          <input type="text" id="mp-join-code-input" class="code-input" maxlength="5" placeholder="ABCDE" autocapitalize="characters" autocorrect="off" spellcheck="false">
         </div>
         <div class="mp-status" id="mp-join-status"></div>
       </div>
@@ -1307,6 +1328,9 @@
 
   const menuScreen = document.getElementById('menu-screen');
   const matchsetupScreen = document.getElementById('matchsetup-screen');
+  const cpuSetupScreen = document.getElementById('cpu-setup-screen');
+  const cpuBtn = document.getElementById('cpu-btn');
+  const cpuSetupBackBtn = document.getElementById('cpu-setup-back-btn');
   const settingsScreen = document.getElementById('settings-screen');
   const gameoverScreen = document.getElementById('gameover-screen');
   const tutorialScreen = document.getElementById('tutorial-screen');
@@ -1357,6 +1381,11 @@
   const skinModalAction = document.getElementById('skin-modal-action');
   const resultCoins = document.getElementById('result-coins');
   const adminBtn = document.getElementById('admin-btn');
+  const adminCodeModalBackdrop = document.getElementById('admin-code-modal-backdrop');
+  const adminCodeModalClose = document.getElementById('admin-code-modal-close');
+  const adminCodeInput = document.getElementById('admin-code-input');
+  const adminCodeStatus = document.getElementById('admin-code-status');
+  const adminCodeSubmitBtn = document.getElementById('admin-code-submit-btn');
   const adminScreen = document.getElementById('admin-screen');
   const adminBackBtn = document.getElementById('admin-back-btn');
   const adminCoinsInput = document.getElementById('admin-coins-input');
@@ -1496,7 +1525,7 @@
   }
 
   // ---------- Shop ----------
-  const COIN_REWARDS = { easy: 5, medium: 10, hard: 20, impossible: 40 };
+  const COIN_REWARDS = { easy: 10, medium: 20, hard: 50, impossible: 250 };
   const RARITY_COLORS = {
     common: '#5b8dff', uncommon: '#4ade80', rare: '#2f4fc4',
     epic: '#a855f7', legendary: '#f97316', mythic: '#ef4444'
@@ -1886,7 +1915,7 @@
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
   // ---------- State machine ----------
-  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog', MULTIPLAYER: 'multiplayer' };
+  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', CPUSETUP: 'cpusetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog', MULTIPLAYER: 'multiplayer' };
   let state = STATE.MENU;
   let tutorialReturnTo = STATE.MENU;
 
@@ -1895,6 +1924,7 @@
     const isTrainingPlay = s === STATE.PLAYING && trainingMode;
     menuScreen.classList.toggle('hidden', s !== STATE.MENU);
     matchsetupScreen.classList.toggle('hidden', s !== STATE.MATCHSETUP);
+    cpuSetupScreen.classList.toggle('hidden', s !== STATE.CPUSETUP);
     multiplayerScreen.classList.toggle('hidden', s !== STATE.MULTIPLAYER);
     settingsScreen.classList.toggle('hidden', s !== STATE.SETTINGS);
     gameoverScreen.classList.toggle('hidden', s !== STATE.GAMEOVER);
@@ -1918,13 +1948,20 @@
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.11;
-  const APP_VERSION_STRING = '1.1.1';
+  const APP_VERSION_NUM = 1.12;
+  const APP_VERSION_STRING = '1.1.2';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
 
   const CHANGELOG = [
+    { version: '1.1.2', date: 'Aug 19, 2026', changes: [
+      'Play menu reorganized — Multiplayer and CPU are now top-level choices (Multiplayer first), CPU difficulty picks live in their own screen',
+      'Punch active window extended to 0.2s, giving a little more forgiveness on close hits',
+      'Punching while dashing now hits with extra knockback',
+      'Admin Panel is now locked behind a code, styled to match the multiplayer join screen',
+      'Coin rewards rebalanced: Easy 10, Medium 20, Hard 50, Impossible 250'
+    ]},
     { version: '1.1.1', date: 'Aug 19, 2026', changes: [
       'Added Daily Rewards — a 7-day streak of coins and bonus prizes, pops up automatically when one is ready to claim',
       'Find Daily Rewards anytime under Settings',
@@ -1950,9 +1987,10 @@
 
   const PUNCH_RANGE = 50;
   const PUNCH_HALF_ANGLE = 50 * Math.PI / 180;
-  const PUNCH_ACTIVE_TIME = 0.14;
+  const PUNCH_ACTIVE_TIME = 0.2;
   const PUNCH_COOLDOWN = 3.0;
   const KNOCKBACK_SPEED = 480;
+  const DASH_PUNCH_KNOCKBACK_MULT = 1.6;
   const STUN_TIME = 0.24;
 
   const DASH_COOLDOWN = 3.0;
@@ -1975,7 +2013,7 @@
       x, y, r: PLAYER_R, alive: true,
       facing: { x: 0, y: 1 },
       kvx: 0, kvy: 0, stunTimer: 0,
-      punchCooldown: 0, punchTimer: 0, punchHasHit: false,
+      punchCooldown: 0, punchTimer: 0, punchHasHit: false, punchDashBonus: false,
       dashCooldown: 0, dashTimer: 0, dashKickVX: 0, dashKickVY: 0,
       dashCarryVX: 0, dashCarryVY: 0,
       invulnTimer: 0,
@@ -2285,15 +2323,18 @@
     const dot = nx * attacker.facing.x + ny * attacker.facing.y;
     return dot >= Math.cos(PUNCH_HALF_ANGLE);
   }
-  function applyKnockback(entity, dir) {
-    entity.kvx = dir.x * KNOCKBACK_SPEED;
-    entity.kvy = dir.y * KNOCKBACK_SPEED;
+  function applyKnockback(entity, dir, speedMultiplier) {
+    const speed = KNOCKBACK_SPEED * (speedMultiplier || 1);
+    entity.kvx = dir.x * speed;
+    entity.kvy = dir.y * speed;
     entity.stunTimer = STUN_TIME;
   }
   function triggerPunch(attacker) {
     attacker.punchTimer = PUNCH_ACTIVE_TIME;
     attacker.punchCooldown = PUNCH_COOLDOWN;
     attacker.punchHasHit = false;
+    // dashing while throwing the punch makes it hit harder
+    attacker.punchDashBonus = (attacker.dashTimer > 0) || (Math.hypot(attacker.dashCarryVX || 0, attacker.dashCarryVY || 0) > 50);
     Sound.punch();
   }
 
@@ -2557,7 +2598,7 @@
     if (!trainingMode) {
       if (player.punchTimer > 0 && !player.punchHasHit && cpu.alive) {
         if (inFacingCone(player, cpu)) {
-          applyKnockback(cpu, player.facing);
+          applyKnockback(cpu, player.facing, player.punchDashBonus ? DASH_PUNCH_KNOCKBACK_MULT : 1);
           player.punchHasHit = true;
           burst(cpu.x, cpu.y, '255,255,255');
           Sound.punchHit();
@@ -2568,7 +2609,7 @@
       }
       if (cpu.punchTimer > 0 && !cpu.punchHasHit && player.alive) {
         if (inFacingCone(cpu, player)) {
-          applyKnockback(player, cpu.facing);
+          applyKnockback(player, cpu.facing, cpu.punchDashBonus ? DASH_PUNCH_KNOCKBACK_MULT : 1);
           cpu.punchHasHit = true;
           burst(player.x, player.y, '255,255,255');
           Sound.punchHit();
@@ -2911,6 +2952,8 @@
 
   // ---------- UI wiring ----------
   playBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MATCHSETUP); });
+  cpuBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.CPUSETUP); });
+  cpuSetupBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MATCHSETUP); });
   startMatchBtn.addEventListener('click', () => { Sound.click(); startGame(); });
   trainingBtn.addEventListener('click', () => { Sound.click(); startTraining(); });
   leaveTrainingBtn.addEventListener('click', leaveTraining);
@@ -2948,7 +2991,28 @@
   skinModalAction.addEventListener('click', handleSkinModalAction);
 
   // ---------- Admin panel (testing utility) ----------
-  adminBtn.addEventListener('click', () => { Sound.click(); adminCoinsInput.value = ''; showScreen(STATE.ADMIN); });
+  const ADMIN_CODE = 'CLD1';
+  adminBtn.addEventListener('click', () => {
+    Sound.click();
+    adminCodeInput.value = '';
+    adminCodeStatus.textContent = '';
+    adminCodeModalBackdrop.classList.remove('hidden');
+  });
+  adminCodeModalClose.addEventListener('click', () => { Sound.click(); adminCodeModalBackdrop.classList.add('hidden'); });
+  adminCodeModalBackdrop.addEventListener('click', (e) => { if (e.target === adminCodeModalBackdrop) adminCodeModalBackdrop.classList.add('hidden'); });
+  function submitAdminCode() {
+    if (adminCodeInput.value.trim().toUpperCase() === ADMIN_CODE) {
+      Sound.buy();
+      adminCodeModalBackdrop.classList.add('hidden');
+      adminCoinsInput.value = '';
+      showScreen(STATE.ADMIN);
+    } else {
+      Sound.denied();
+      adminCodeStatus.textContent = 'Incorrect code.';
+    }
+  }
+  adminCodeSubmitBtn.addEventListener('click', submitAdminCode);
+  adminCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdminCode(); });
   adminBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
   dailyRewardsBtn.addEventListener('click', () => { Sound.click(); openDailyRewardModal(); });
   dailyModalClose.addEventListener('click', () => { Sound.click(); dailyModalBackdrop.classList.add('hidden'); });
