@@ -701,6 +701,7 @@
     pointer-events: none;
   }
 
+  .ability-list { display: flex; flex-direction: column; gap: 10px; }
   .ability-card {
     display: flex;
     align-items: center;
@@ -1072,6 +1073,10 @@
           <button class="ability-buy-btn" id="dash-buy-btn">50 🪙</button>
         </div>
       </div>
+      <div class="settings-row">
+        <div class="row-label">Bullet Skins</div>
+        <div class="ability-list" id="bullet-skins-list"></div>
+      </div>
     </div>
     <div class="menu-buttons">
       <button class="btn" id="shop-back-btn">Back</button>
@@ -1265,7 +1270,7 @@
   }
 
   // ---------- Persisted settings ----------
-  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0, ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null };
+  let settings = { difficulty: 'medium', sound: true, controls: defaultControls(), tutorialSeen: false, achievements: {}, coins: 0, ownedSkins: ['blue'], equippedSkin: 'blue', totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0, ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null, ownedBulletSkins: ['default'], equippedBulletSkin: 'default' };
   try {
     const saved = JSON.parse(localStorage.getItem('dodgeArenaSettings') || 'null');
     if (saved) {
@@ -1451,6 +1456,7 @@
   const editDash = document.getElementById('edit-dash');
   const dashAbilityCard = document.getElementById('dash-ability-card');
   const dashBuyBtn = document.getElementById('dash-buy-btn');
+  const bulletSkinsList = document.getElementById('bullet-skins-list');
   const changelogBtn = document.getElementById('changelog-btn');
   const changelogScreen = document.getElementById('changelog-screen');
   const changelogBackBtn = document.getElementById('changelog-back-btn');
@@ -1566,12 +1572,20 @@
   const PLAYER_SKINS = [
     { id: 'blue',   name: 'Default Blue', hex: '#5b8dff', price: 0,  rarity: 'common',
       desc: 'Your original color. Simple, sharp, reliable.', date: 'Launch day' },
+    { id: 'red',    name: 'Red',    hex: '#ff4d4d', price: 5,  rarity: 'common',
+      desc: 'Classic and bold — a color that means business.', date: 'Released Aug 20, 2026' },
     { id: 'green',  name: 'Green',  hex: '#3ddc73', price: 10, rarity: 'common',
       desc: 'A crisp green finish that pops against the arena lights.', date: 'Released Aug 10, 2026' },
+    { id: 'yellow', name: 'Yellow', hex: '#ffe14d', price: 15, rarity: 'common',
+      desc: 'Bright and impossible to miss.', date: 'Released Aug 20, 2026' },
     { id: 'orange', name: 'Orange', hex: '#ffb020', price: 20, rarity: 'common',
       desc: "Bold amber — you'll be hard to lose track of.", date: 'Released Aug 12, 2026' },
     { id: 'purple', name: 'Purple', hex: '#9b6bff', price: 30, rarity: 'uncommon',
       desc: "A rarer shade, earned by fighters who mean business.", date: 'Released Aug 15, 2026' },
+    { id: 'pink',   name: 'Pink',   hex: '#ff6fc4', price: 35, rarity: 'common',
+      desc: 'Playful and eye-catching.', date: 'Released Aug 20, 2026' },
+    { id: 'cyan',   name: 'Cyan',   hex: '#4ddbff', price: 50, rarity: 'uncommon',
+      desc: 'Cool, electric, and sharp.', date: 'Released Aug 20, 2026' },
     { id: 'angel',  name: 'Angel', hex: '#f6f6f8', price: 100, rarity: 'rare',
       eyeColor: '#ffd93d', eyeGlow: true, accessory: 'halo',
       desc: 'Pure white, watched over by a glowing halo.', date: 'Released Aug 16, 2026' },
@@ -1803,6 +1817,7 @@
       playerSkinsRow.appendChild(icon);
     }
     renderAbilities();
+    renderBulletSkins();
   }
 
   function ownsAbility(id) { return settings.ownedAbilities.includes(id); }
@@ -1832,6 +1847,62 @@
       Sound.denied();
     }
   });
+
+  // ---------- Bullet Skins ----------
+  const BULLET_SKINS = [
+    { id: 'default', name: 'Default', icon: '⚪', price: 0,   desc: 'The classic glowing bullet.' },
+    { id: 'arrows',  name: 'Arrows',  icon: '🏹', price: 100, desc: "Bullets look like arrows pointing where they fly. Hitbox is unchanged." }
+  ];
+
+  function ownsBulletSkin(id) { return settings.ownedBulletSkins.includes(id); }
+
+  function renderBulletSkins() {
+    bulletSkinsList.innerHTML = '';
+    for (const skin of BULLET_SKINS) {
+      const owned = ownsBulletSkin(skin.id);
+      const equipped = settings.equippedBulletSkin === skin.id;
+      const card = document.createElement('div');
+      card.className = 'ability-card';
+      let btnLabel, btnClass = '', disabled = '';
+      if (equipped) { btnLabel = 'Equipped'; btnClass = 'owned'; disabled = 'disabled'; }
+      else if (owned) { btnLabel = 'Equip'; }
+      else { btnLabel = skin.price + ' 🪙'; }
+      card.innerHTML =
+        '<div class="ability-icon">' + skin.icon + '</div>' +
+        '<div class="ability-text">' +
+          '<div class="ability-name">' + skin.name + '</div>' +
+          '<div class="ability-desc">' + skin.desc + '</div>' +
+        '</div>' +
+        '<button class="ability-buy-btn ' + btnClass + '" ' + disabled + '>' + btnLabel + '</button>';
+      const btn = card.querySelector('.ability-buy-btn');
+      btn.addEventListener('click', () => handleBulletSkinClick(skin.id));
+      bulletSkinsList.appendChild(card);
+    }
+  }
+
+  function handleBulletSkinClick(skinId) {
+    const skin = BULLET_SKINS.find(s => s.id === skinId);
+    if (!skin) return;
+    const owned = ownsBulletSkin(skinId);
+    if (owned) {
+      settings.equippedBulletSkin = skinId;
+      Sound.click();
+      saveSettings();
+      renderBulletSkins();
+      return;
+    }
+    if (settings.coins >= skin.price) {
+      settings.coins -= skin.price;
+      settings.ownedBulletSkins.push(skinId);
+      settings.equippedBulletSkin = skinId;
+      Sound.buy();
+      saveSettings();
+      updateCoinDisplays();
+      renderBulletSkins();
+    } else {
+      Sound.denied();
+    }
+  }
 
   let activeModalSkin = null;
   function openSkinModal(skin) {
@@ -1969,13 +2040,23 @@
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.12;
-  const APP_VERSION_STRING = '1.1.2';
+  const APP_VERSION_NUM = 1.14;
+  const APP_VERSION_STRING = '1.1.4';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
 
   const CHANGELOG = [
+    { version: '1.1.4', date: 'Aug 20, 2026', changes: [
+      'Added Bullet Skins to the Shop — a new section for changing how the bullets you dodge look',
+      'First one: Arrows (100 coins) — bullets point the direction they\'re flying',
+      'Purely visual — the actual hitbox you\'re dodging never changes'
+    ]},
+    { version: '1.1.3', date: 'Aug 20, 2026', changes: [
+      'Added four new basic color skins — Red, Yellow, Pink, and Cyan',
+      'Player Skins in the Shop now sort from cheapest to most expensive',
+      'Cyan is the priciest of the new colors at 50 coins and comes in as Uncommon'
+    ]},
     { version: '1.1.2', date: 'Aug 19, 2026', changes: [
       'Play menu reorganized — Multiplayer and CPU are now top-level choices (Multiplayer first), CPU difficulty picks live in their own screen',
       'Punch active window extended to 0.2s, giving a little more forgiveness on close hits',
@@ -2715,12 +2796,16 @@
         ctx.fillStyle = 'rgba(255,209,102,' + alpha + ')';
         ctx.fill();
       }
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffd166';
-      ctx.shadowColor = '#ffd166';
-      ctx.shadowBlur = 12;
-      ctx.fill();
+      if (settings.equippedBulletSkin === 'arrows') {
+        drawArrowBullet(b);
+      } else {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffd166';
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+      }
     }
     ctx.shadowBlur = 0;
 
@@ -2761,6 +2846,72 @@
     ctx.closePath();
     ctx.fillStyle = 'rgba(255,255,255,' + (0.30 * alpha) + ')';
     ctx.fill();
+  }
+
+  // Purely visual — the actual hitbox is still the plain circle of radius
+  // b.r used everywhere in collision code. This never touches that.
+  function drawArrowBullet(b) {
+    const angle = Math.atan2(b.vy, b.vx);
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(angle);
+
+    // wooden shaft
+    ctx.strokeStyle = '#9a6a35';
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-9, 0);
+    ctx.lineTo(4.5, 0);
+    ctx.stroke();
+    // a thin highlight down the shaft for a rounded-wood look
+    ctx.strokeStyle = 'rgba(255,220,170,0.45)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-8, -0.6);
+    ctx.lineTo(3.5, -0.6);
+    ctx.stroke();
+
+    // fletching (feathers) near the back
+    ctx.fillStyle = '#e2453f';
+    ctx.beginPath();
+    ctx.moveTo(-9, 0);
+    ctx.lineTo(-5.5, -3.6);
+    ctx.lineTo(-4.5, -0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f0f0f2';
+    ctx.beginPath();
+    ctx.moveTo(-9, 0);
+    ctx.lineTo(-5.5, 3.6);
+    ctx.lineTo(-4.5, 0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // metal arrowhead
+    ctx.shadowColor = '#e8ecf2';
+    ctx.shadowBlur = 5;
+    ctx.fillStyle = '#c7ccd1';
+    ctx.beginPath();
+    ctx.moveTo(11, 0);
+    ctx.lineTo(3, -3.6);
+    ctx.lineTo(4.3, 0);
+    ctx.lineTo(3, 3.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+    // a small bright edge to sell the metal look
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(11, 0);
+    ctx.lineTo(3, -3.6);
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   function drawGlove(x, y, angle, scale, glowColor) {
@@ -3098,6 +3249,7 @@
 
   adminAllSkinsBtn.addEventListener('click', () => {
     settings.ownedSkins = PLAYER_SKINS.map(s => s.id);
+    settings.ownedBulletSkins = BULLET_SKINS.map(s => s.id);
     saveSettings();
     Sound.buy();
     checkCollectorAchievement();
@@ -3123,7 +3275,8 @@
       tutorialSeen: false, achievements: {}, coins: 0,
       ownedSkins: ['blue'], equippedSkin: 'blue',
       totalWins: 0, mediumPlusWins: 0, hardPlusWins: 0, punchHits: 0,
-      ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null
+      ownedAbilities: [], dailyStreak: 0, lastClaimDate: null, username: null,
+      ownedBulletSkins: ['default'], equippedBulletSkin: 'default'
     };
     saveSettings();
     applyControlLayout();
