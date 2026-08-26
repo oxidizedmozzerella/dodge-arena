@@ -981,10 +981,21 @@
     <div class="menu-buttons">
       <button class="btn primary" id="play-btn">Play</button>
       <button class="btn" id="shop-btn">Shop</button>
-      <button class="btn" id="achievements-btn">Achievements</button>
+      <button class="btn" id="other-btn">Other</button>
       <button class="btn" id="settings-btn">Settings</button>
     </div>
     <div class="version-tag" id="version-tag">Version 1.0.1</div>
+  </div>
+
+  <!-- OTHER -->
+  <div class="screen hidden" id="other-screen">
+    <div class="title" style="font-size:28px;">Other</div>
+    <div class="menu-buttons">
+      <button class="btn" id="other-achievements-btn">Achievements</button>
+      <button class="btn" id="other-daily-btn">Daily Rewards</button>
+      <button class="btn" id="other-changelog-btn">Changelog</button>
+      <button class="btn" id="other-back-btn">Back</button>
+    </div>
   </div>
 
   <!-- USERNAME -->
@@ -1217,16 +1228,8 @@
         <span>Customize Controls</span>
         <span class="arrow">›</span>
       </button>
-      <button class="ghost-btn" id="daily-rewards-btn">
-        <span>Daily Rewards</span>
-        <span class="arrow">›</span>
-      </button>
       <button class="ghost-btn" id="tutorial-btn">
         <span>How To Play</span>
-        <span class="arrow">›</span>
-      </button>
-      <button class="ghost-btn" id="changelog-btn">
-        <span>Changelog</span>
         <span class="arrow">›</span>
       </button>
     </div>
@@ -1383,7 +1386,12 @@
   const mpJoinCancelBtn = document.getElementById('mp-join-cancel-btn');
   const tutorialBtn = document.getElementById('tutorial-btn');
   const tutorialDoneBtn = document.getElementById('tutorial-done-btn');
-  const achievementsBtn = document.getElementById('achievements-btn');
+  const otherBtn = document.getElementById('other-btn');
+  const otherScreen = document.getElementById('other-screen');
+  const otherAchievementsBtn = document.getElementById('other-achievements-btn');
+  const otherDailyBtn = document.getElementById('other-daily-btn');
+  const otherChangelogBtn = document.getElementById('other-changelog-btn');
+  const otherBackBtn = document.getElementById('other-back-btn');
   const achievementsScreen = document.getElementById('achievements-screen');
   const achievementsList = document.getElementById('achievements-list');
   const achievementsBackBtn = document.getElementById('achievements-back-btn');
@@ -1420,7 +1428,6 @@
   const adminAllAchievementsBtn = document.getElementById('admin-all-achievements-btn');
   const adminResetBtn = document.getElementById('admin-reset-btn');
   const adminResetDailyBtn = document.getElementById('admin-reset-daily-btn');
-  const dailyRewardsBtn = document.getElementById('daily-rewards-btn');
   const dailyModalBackdrop = document.getElementById('daily-modal-backdrop');
   const dailyModalClose = document.getElementById('daily-modal-close');
   const dailyRewardsGrid = document.getElementById('daily-rewards-grid');
@@ -1457,7 +1464,6 @@
   const dashAbilityCard = document.getElementById('dash-ability-card');
   const dashBuyBtn = document.getElementById('dash-buy-btn');
   const bulletSkinsList = document.getElementById('bullet-skins-list');
-  const changelogBtn = document.getElementById('changelog-btn');
   const changelogScreen = document.getElementById('changelog-screen');
   const changelogBackBtn = document.getElementById('changelog-back-btn');
   const changelogList = document.getElementById('changelog-list');
@@ -2007,7 +2013,7 @@
   window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
   // ---------- State machine ----------
-  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', CPUSETUP: 'cpusetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog', MULTIPLAYER: 'multiplayer' };
+  const STATE = { MENU: 'menu', MATCHSETUP: 'matchsetup', CPUSETUP: 'cpusetup', SETTINGS: 'settings', CUSTOMIZE: 'customize', PLAYING: 'playing', GAMEOVER: 'gameover', TUTORIAL: 'tutorial', ACHIEVEMENTS: 'achievements', SHOP: 'shop', ADMIN: 'admin', CHANGELOG: 'changelog', MULTIPLAYER: 'multiplayer', OTHER: 'other' };
   let state = STATE.MENU;
   let tutorialReturnTo = STATE.MENU;
 
@@ -2019,6 +2025,7 @@
     cpuSetupScreen.classList.toggle('hidden', s !== STATE.CPUSETUP);
     multiplayerScreen.classList.toggle('hidden', s !== STATE.MULTIPLAYER);
     settingsScreen.classList.toggle('hidden', s !== STATE.SETTINGS);
+    otherScreen.classList.toggle('hidden', s !== STATE.OTHER);
     gameoverScreen.classList.toggle('hidden', s !== STATE.GAMEOVER);
     tutorialScreen.classList.toggle('hidden', s !== STATE.TUTORIAL);
     achievementsScreen.classList.toggle('hidden', s !== STATE.ACHIEVEMENTS);
@@ -2040,13 +2047,17 @@
   }
 
   // ---------- Entities ----------
-  const APP_VERSION_NUM = 1.14;
-  const APP_VERSION_STRING = '1.1.4';
+  const APP_VERSION_NUM = 1.15;
+  const APP_VERSION_STRING = '1.1.5';
   const PLAYER_R = 14;
   const BULLET_R = 6;
   const PLAYER_SPEED = 190;
 
   const CHANGELOG = [
+    { version: '1.1.5', date: 'Aug 20, 2026', changes: [
+      'Main menu\'s Achievements button replaced with "Other" — opens a menu with Achievements, Daily Rewards, and Changelog together',
+      'Daily Rewards and Changelog moved out of Settings into the new Other menu'
+    ]},
     { version: '1.1.4', date: 'Aug 20, 2026', changes: [
       'Added Bullet Skins to the Shop — a new section for changing how the bullets you dodge look',
       'First one: Arrows (100 coins) — bullets point the direction they\'re flying',
@@ -2872,19 +2883,19 @@
     ctx.lineTo(3.5, -0.6);
     ctx.stroke();
 
-    // fletching (feathers) near the back
+    // fletching (feathers) near the back — flat nock end, no back-facing point
     ctx.fillStyle = '#e2453f';
     ctx.beginPath();
-    ctx.moveTo(-9, 0);
-    ctx.lineTo(-5.5, -3.6);
-    ctx.lineTo(-4.5, -0.5);
+    ctx.moveTo(-9, -1.3);
+    ctx.lineTo(-9, 0.2);
+    ctx.lineTo(-5, -3.6);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = '#f0f0f2';
     ctx.beginPath();
-    ctx.moveTo(-9, 0);
-    ctx.lineTo(-5.5, 3.6);
-    ctx.lineTo(-4.5, 0.5);
+    ctx.moveTo(-9, 1.3);
+    ctx.lineTo(-9, -0.2);
+    ctx.lineTo(-5, 3.6);
     ctx.closePath();
     ctx.fill();
 
@@ -3153,10 +3164,13 @@
     saveSettings();
     showScreen(tutorialReturnTo);
   });
-  changelogBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.CHANGELOG); });
-  changelogBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SETTINGS); });
-  achievementsBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.ACHIEVEMENTS); });
-  achievementsBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
+  changelogBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.OTHER); });
+  achievementsBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.OTHER); });
+  otherBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.OTHER); });
+  otherBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
+  otherAchievementsBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.ACHIEVEMENTS); });
+  otherDailyBtn.addEventListener('click', () => { Sound.click(); openDailyRewardModal(); });
+  otherChangelogBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.CHANGELOG); });
   shopBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.SHOP); });
   shopBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
   skinModalClose.addEventListener('click', () => { Sound.click(); closeSkinModal(); });
@@ -3187,7 +3201,6 @@
   adminCodeSubmitBtn.addEventListener('click', submitAdminCode);
   adminCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdminCode(); });
   adminBackBtn.addEventListener('click', () => { Sound.click(); showScreen(STATE.MENU); });
-  dailyRewardsBtn.addEventListener('click', () => { Sound.click(); openDailyRewardModal(); });
   dailyModalClose.addEventListener('click', () => { Sound.click(); dailyModalBackdrop.classList.add('hidden'); });
   dailyModalBackdrop.addEventListener('click', (e) => { if (e.target === dailyModalBackdrop) dailyModalBackdrop.classList.add('hidden'); });
   dailyClaimBtn.addEventListener('click', claimDailyReward);
